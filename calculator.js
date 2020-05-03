@@ -55,6 +55,7 @@ function precedence(operator){
     }
 }
 
+//give back integer if the result is nearly one
 function round(input){
     const rounded = Math.round(input);
     const relError = Math.abs(rounded - input) / input;
@@ -63,6 +64,7 @@ function round(input){
     } else return input;
 }
 
+//check if there is decimal point
 function isDecimal(inputString) {
     if (inputString.indexOf('.') == -1){
         return false;
@@ -105,13 +107,15 @@ function toggleSign() {
     updateDisplay();
 }
 
+//restrict the number of digits lower than 10
+//be able to show ERROR message too
 function updateDisplay() {
     const divDisplay = document.querySelector('.display');
     if (!isNaN(display)) {
         const value = Number(display);
         if (numberOfDigits(display) > 10){
             display = value.toPrecision(9);
-            if (value > 1000000000 || value < 0.0000000001 || numberOfDigits(display) > 10){
+            if (numberOfDigits(display) > 10){
                 display = value.toExponential(6);
             } 
         }
@@ -124,23 +128,23 @@ function isPrevKeyOp() {
     return (opKeys.indexOf(prevKey) > -1);
 }
 
+//calculate according the math rules
 function calcWithPrecedence(nextOp){
-    if (precedence(op) < precedence(nextOp)) {
-        oldA = a;
+    if (precedence(op) < precedence(nextOp)) { //save the current calculation for later
+        oldA = a;                              //when the next one needs to go first 
         oldOp = op;
-        a = Number(display);
     } else {
-        if (op != ''){
+        if (op != ''){  //do the current calculation when it goes first
             b = Number(display);
             display = operate(a, b, op).toString();
         } 
-        if (oldOp != '' && precedence(op) > precedence(nextOp)) {
-            oldB = Number(display);
+        if (oldOp != '' && precedence(op) > precedence(nextOp)) { //go back to the saved calculation                                                     
+            oldB = Number(display);                               //when the next calculation comes later
             display = operate(oldA, oldB, oldOp).toString();
             oldOp = '';
         }
-        a = Number(display);
     }
+    a = Number(display);  //input the result for the next operation
 }
 
 //Handle when the white '.number' keys clicked
@@ -170,12 +174,12 @@ function initialize(){
 }
 
 function doOpKeyPress(key){
-    if (op != '' && !Number.isNaN(a) && !isPrevKeyOp()) {
+    if (op != '' && !Number.isNaN(a) && !isPrevKeyOp()) {  //do your calculation when all the input available
         b = Number(display);
         calcWithPrecedence(key);
         updateDisplay();
     } else {
-        a = Number(display);
+        a = Number(display); //input the first operand from the display unless your full input is ready
     }
 }
 
@@ -194,7 +198,7 @@ function handleOperatorKeyPress(e){
         default:
             doOpKeyPress(key);
             op = key;
-            prevKey = key;
+            prevKey = key; //save the previous key, because it shows when the number input starts
         break;
     }
 }
@@ -204,12 +208,12 @@ function pushKey(e) {
     e.target.classList.add('down');
 }
 
-//Release the key when it's not pushed down
+//Change back the key when it's released
 function releaseKey(e) {
     e.target.classList.remove('down');
 }
 
-//Adds the func event handler for the event to all the elements of the elements array 
+//Add the func event handler for the event to all the elements of the elements array 
 function addEventHandler(event, func, elements){
     elements.forEach(function(element) {
         element.addEventListener(event, func);
@@ -220,6 +224,7 @@ function addEventHandler(event, func, elements){
 
 //main program
 let display = '0';
+updateDisplay();
 
 //current operands and operator
 let a = NaN;
@@ -231,13 +236,14 @@ let oldA = NaN;
 let oldOp ='';
 let oldB = NaN;
 
-let prevKey = ''; 
+let prevKey = '';  //store the previous keypress to decide when to start number input
 
 const numberKeys = document.querySelectorAll('.number');
 const operatorKeys = document.querySelectorAll('.op');
 const allKeys = document.querySelectorAll('.key');
-addEventHandler('click', handleNumberKeyPress, numberKeys);
-addEventHandler('click', handleOperatorKeyPress, operatorKeys);
-addEventHandler('mousedown', pushKey, allKeys);
-addEventHandler('mouseup', releaseKey, allKeys);
-updateDisplay();
+
+addEventHandler('click', handleNumberKeyPress, numberKeys);  //this is the useful functionality
+addEventHandler('click', handleOperatorKeyPress, operatorKeys); //with this line
+
+addEventHandler('mousedown', pushKey, allKeys);   //do a little css animation 
+addEventHandler('mouseup', releaseKey, allKeys);  //when the keys are pushed and released
