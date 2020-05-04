@@ -29,7 +29,7 @@ function operate(a, b, operator){
         case '*':
             return round(multiply(a, b));
         break;
-        case ':':
+        case '/':
             return round(divide(a, b));
         break;
     }
@@ -49,7 +49,7 @@ function precedence(operator){
         case '*':
             return 1;
         brake;
-        case ':':
+        case '/':
             return 1;
         brake;
     }
@@ -114,7 +114,7 @@ function updateDisplay() {
     if (!isNaN(display)) {
         const value = Number(display);
         if (numberOfDigits(display) > 10){
-            display = value.toPrecision(9);
+            display = value.toPrecision(7);
             if (numberOfDigits(display) > 10){
                 display = value.toExponential(6);
             } 
@@ -124,7 +124,7 @@ function updateDisplay() {
 }
 
 function isKeyOp(key){
-    const opKeys = ['+','-','*',':','=','AC'];
+    const opKeys = ['+','-','*','/','=','AC'];
     return (opKeys.indexOf(key) > -1);
 }
 
@@ -163,7 +163,7 @@ function numberKeyPress(key){
         addDigitToDisplay(key);
     }
     updateDisplay();
-    prevKey = key;
+    prevKey = key;  //save the previous key, because it shows when the number input starts 
 }
 
 function initialize(){
@@ -234,7 +234,7 @@ const KEYLIST = [{code: 96, key: '0', id: 'id0'},
                  {code: 107, key: '+', id: 'idadd'},
                  {code: 109, key: '-', id: 'idsub'},
                  {code: 106, key: '*', id: 'idmul'},
-                 {code: 111, key: ':', id: 'iddiv'}];
+                 {code: 111, key: '/', id: 'iddiv'}];
 
 function getKey(keyCode){
     const element = KEYLIST.find(key => key.code === keyCode );
