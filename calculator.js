@@ -29,7 +29,7 @@ function operate(a, b, operator){
         case '*':
             return round(multiply(a, b));
         break;
-        case '/':
+        case ':':
             return round(divide(a, b));
         break;
     }
@@ -49,7 +49,7 @@ function precedence(operator){
         case '*':
             return 1;
         brake;
-        case '/':
+        case ':':
             return 1;
         brake;
     }
@@ -83,7 +83,7 @@ function numberOfDigits(inputString) {
 }
 
 function addDigitToDisplay(digitString) {
-    if (display == '0' || isPrevKeyOp()) {
+    if (display == '0' || isKeyOp(prevKey)) {
         display = digitString;
     } else if (digitString != '.' || !isDecimal(display) && digitString == '.') {
         if (numberOfDigits(display) < 10) {
@@ -122,10 +122,15 @@ function updateDisplay() {
     } 
     divDisplay.textContent = display;
 }
- 
-function isPrevKeyOp() {
-    const opKeys = '+-*/=';
-    return (opKeys.indexOf(prevKey) > -1);
+
+function isKeyOp(key){
+    const opKeys = ['+','-','*',':','=','AC'];
+    return (opKeys.indexOf(key) > -1);
+}
+
+function isKeyNumber(key){
+    const numKeys = ['0','1','2','3','4','5','6','7','8','9','.','C','+/-'];
+    return (numKeys.indexOf(key) > -1);
 }
 
 //calculate according the math rules
@@ -148,8 +153,8 @@ function calcWithPrecedence(nextOp){
 }
 
 //Handle when the white '.number' keys clicked
-function handleNumberKeyPress(e){
-    const key = e.target.textContent;
+function numberKeyPress(key){
+    if (!isKeyNumber(key)) return
     if (key == 'C') {
         deleteDigitFromDisplay();
     } else if (key == '+/-') {
@@ -173,8 +178,8 @@ function initialize(){
     prevKey = '';
 }
 
-function doOpKeyPress(key){
-    if (op != '' && !Number.isNaN(a) && !isPrevKeyOp()) {  //do your calculation when all the input available
+function tryToCalc(key){
+    if (op != '' && !Number.isNaN(a) && !isKeyOp(prevKey)) {  //do your calculation when all the input available
         b = Number(display);
         calcWithPrecedence(key);
         updateDisplay();
@@ -183,8 +188,8 @@ function doOpKeyPress(key){
     }
 }
 
-function handleOperatorKeyPress(e){
-    const key = e.target.textContent;
+function operatorKeyPress(key){
+    if (!isKeyOp(key)) return
     switch (key){
         case 'AC':
             initialize();
@@ -192,24 +197,87 @@ function handleOperatorKeyPress(e){
             updateDisplay();
         break;
         case '=':
-            doOpKeyPress(key);
+            tryToCalc(key);
             initialize();
-        break;
-        default:
-            doOpKeyPress(key);
-            op = key;
             prevKey = key; //save the previous key, because it shows when the number input starts
         break;
+        default:
+            tryToCalc(key);
+            op = key;
+            prevKey = key; // see above
+        break;
     }
+} 
+
+
+function onMouseClick(e){
+    const key = e.target.textContent;
+    numberKeyPress(key);
+    operatorKeyPress(key);
+}
+
+const KEYLIST = [{code: 96, key: '0', id: 'id0'},
+                 {code: 97, key: '1', id: 'id1'},
+                 {code: 98, key: '2', id: 'id2'},
+                 {code: 99, key: '3', id: 'id3'},
+                 {code: 100, key: '4', id: 'id4'},
+                 {code: 101, key: '5', id: 'id5'},
+                 {code: 102, key: '6', id: 'id6'},
+                 {code: 103, key: '7', id: 'id7'},
+                 {code: 104, key: '8', id: 'id8'},
+                 {code: 105, key: '9', id: 'id9'},
+                 {code: 8, key: 'C', id: 'idc'},
+                 {code: 110, key: '.', id: 'iddot'},
+                 {code: 46, key: 'AC', id: 'idac'},
+                 {code: 13, key: '=', id: 'idequal'},
+                 {code: 16, key: '+/-', id: 'idsign'},
+                 {code: 107, key: '+', id: 'idadd'},
+                 {code: 109, key: '-', id: 'idsub'},
+                 {code: 106, key: '*', id: 'idmul'},
+                 {code: 111, key: ':', id: 'iddiv'}];
+
+function getKey(keyCode){
+    const element = KEYLIST.find(key => key.code === keyCode );
+    if (!element) return
+    return element.key;
+}
+
+function getId(keyCode){
+    const element = KEYLIST.find(function(key){
+       return (key.code === keyCode); 
+    });
+    if (!element) return
+    return element.id;
+}
+
+function onKeyDown(e){
+    const keyCode = e.keyCode;
+    const key = getKey(keyCode);
+    const id = '#' + getId(keyCode);
+    if (!key) return
+    numberKeyPress(key);
+    operatorKeyPress(key);
+    const div = document.querySelector(id);
+    div.classList.add('down');
+}
+
+function onKeyUp(e){
+    const keyCode = e.keyCode;
+    const key = getKey(keyCode);
+    let id = getId(keyCode);
+    if (!id) return
+    id = '#' + id;
+    const div = document.querySelector(id);
+    div.classList.remove('down');
 }
 
 //Change the key when it's pushed down
-function pushKey(e) {
+function onMouseDown(e) {
     e.target.classList.add('down');
 }
 
 //Change back the key when it's released
-function releaseKey(e) {
+function onMouseUp(e) {
     e.target.classList.remove('down');
 }
 
@@ -238,12 +306,12 @@ let oldB = NaN;
 
 let prevKey = '';  //store the previous keypress to decide when to start number input
 
-const numberKeys = document.querySelectorAll('.number');
-const operatorKeys = document.querySelectorAll('.op');
 const allKeys = document.querySelectorAll('.key');
 
-addEventHandler('click', handleNumberKeyPress, numberKeys);  //this is the useful functionality
-addEventHandler('click', handleOperatorKeyPress, operatorKeys); //with this line
+addEventHandler('click', onMouseClick, allKeys);  //this is the useful functionality
 
-addEventHandler('mousedown', pushKey, allKeys);   //do a little css animation 
-addEventHandler('mouseup', releaseKey, allKeys);  //when the keys are pushed and released
+addEventHandler('mousedown', onMouseDown, allKeys);   //do a little css animation 
+addEventHandler('mouseup', onMouseUp, allKeys);  //when the keys are pushed and released
+
+window.addEventListener('keydown', onKeyDown);
+window.addEventListener('keyup', onKeyUp);
