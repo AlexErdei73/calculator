@@ -58,7 +58,7 @@ function precedence(operator){
 //give back integer if the result is nearly one
 function round(input){
     const rounded = Math.round(input);
-    const relError = Math.abs(rounded - input) / input;
+    const relError = Math.abs((rounded - input) / input);
     if (relError < 1e-7) {
         return rounded;
     } else return input;
@@ -74,6 +74,9 @@ function isDecimal(inputString) {
 }
 
 function numberOfDigits(inputString) {
+    if (inputString[0] == '-') {
+        inputString = inputString.slice(1);
+    }
     const len = inputString.length;
     if (isDecimal(inputString)) {
         return len - 1;
@@ -310,7 +313,7 @@ const allKeys = document.querySelectorAll('.key');
 
 addEventHandler('click', onMouseClick, allKeys);  //this is the useful functionality
 
-addEventHandler('mousedown', onMouseDown, allKeys);   //do a little css animation 
+addEventHandler('mousedown', onMouseDown, allKeys);   //do a little css effect
 addEventHandler('mouseup', onMouseUp, allKeys);  //when the keys are pushed and released
 
 window.addEventListener('keydown', onKeyDown);
