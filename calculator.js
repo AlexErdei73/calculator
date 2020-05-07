@@ -100,6 +100,7 @@ function deleteDigitFromDisplay() {
 }
 
 function toggleSign() {
+    if (display == '0') return
     if (display[0] == '-') {
         display = display.slice(1);
     } else {
@@ -120,11 +121,10 @@ function updateDisplay(key) {
             display = value.toString();
             let len = 10;
             if (value < 0) { len++; }
-            if (isDecimal(absValue.toString())) { len++; }
+            if (isDecimal(display)) { len++; }
             display = display.slice(0, len);
         }
-    }
-    if (isKeyOp(key)) {
+    } else if (isKeyOp(key)) {
         display = displayValue;
         initialize();
     } 
@@ -233,44 +233,46 @@ function onMouseClick(e){
     operatorKeyPress(key);
 }
 
-const KEYLIST = [{code: 96, key: '0', id: 'id0'},
-                 {code: 97, key: '1', id: 'id1'},
-                 {code: 98, key: '2', id: 'id2'},
-                 {code: 99, key: '3', id: 'id3'},
-                 {code: 100, key: '4', id: 'id4'},
-                 {code: 101, key: '5', id: 'id5'},
-                 {code: 102, key: '6', id: 'id6'},
-                 {code: 103, key: '7', id: 'id7'},
-                 {code: 104, key: '8', id: 'id8'},
-                 {code: 105, key: '9', id: 'id9'},
-                 {code: 8, key: 'C', id: 'idc'},
-                 {code: 110, key: '.', id: 'iddot'},
-                 {code: 46, key: 'AC', id: 'idac'},
-                 {code: 13, key: '=', id: 'idequal'},
-                 {code: 16, key: '+/-', id: 'idsign'},
-                 {code: 107, key: '+', id: 'idadd'},
-                 {code: 109, key: '-', id: 'idsub'},
-                 {code: 106, key: '*', id: 'idmul'},
-                 {code: 111, key: '/', id: 'iddiv'}];
+const KEYLIST = [{name: '0', key: '0', id: 'id0'},
+                 {name: '1', key: '1', id: 'id1'},
+                 {name: '2', key: '2', id: 'id2'},
+                 {name: '3', key: '3', id: 'id3'},
+                 {name: '4', key: '4', id: 'id4'},
+                 {name: '5', key: '5', id: 'id5'},
+                 {name: '6', key: '6', id: 'id6'},
+                 {name: '7', key: '7', id: 'id7'},
+                 {name: '8', key: '8', id: 'id8'},
+                 {name: '9', key: '9', id: 'id9'},
+                 {name: 'Backspace', key: 'C', id: 'idc'},
+                 {name: '.', key: '.', id: 'iddot'},
+                 {name: 'Delete', key: 'AC', id: 'idac'},
+                 {name: '=', key: '=', id: 'idequal'},
+                 {name: 'Enter', key: '=', id: 'idequal'},
+                 {name: ' ', key: '+/-', id: 'idsign'},
+                 {name: '+', key: '+', id: 'idadd'},
+                 {name: '-', key: '-', id: 'idsub'},
+                 {name: '*', key: '*', id: 'idmul'},
+                 {name: '/', key: '/', id: 'iddiv'}];
 
-function getKey(keyCode){
-    const element = KEYLIST.find(key => key.code === keyCode );
+function getKey(name){
+    const element = KEYLIST.find(item => item.name === name );
     if (!element) return
     return element.key;
 }
 
-function getId(keyCode){
-    const element = KEYLIST.find(function(key){
-       return (key.code === keyCode); 
+function getId(name){
+    const element = KEYLIST.find(function(item){
+       return (item.name === name); 
     });
     if (!element) return
     return element.id;
 }
 
 function onKeyDown(e){
-    const keyCode = e.keyCode;
-    const key = getKey(keyCode);
-    const id = '#' + getId(keyCode);
+    const name = e.key;
+    console.log(name);
+    const key = getKey(name);
+    const id = '#' + getId(name);
     if (!key) return
     numberKeyPress(key);
     operatorKeyPress(key);
@@ -279,9 +281,9 @@ function onKeyDown(e){
 }
 
 function onKeyUp(e){
-    const keyCode = e.keyCode;
-    const key = getKey(keyCode);
-    let id = getId(keyCode);
+    const name = e.key;
+    const key = getKey(name);
+    let id = getId(name);
     if (!id) return
     id = '#' + id;
     const div = document.querySelector(id);
