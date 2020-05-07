@@ -21,16 +21,16 @@ function divide(a, b){
 function operate(a, b, operator){
     switch (operator) {
         case '+':
-            return round(add(a, b));
+            return add(a, b);
         break;
         case '-':
-            return round(subtract(a, b));
+            return subtract(a, b);
         break;
         case '*':
-            return round(multiply(a, b));
+            return multiply(a, b);
         break;
         case '/':
-            return round(divide(a, b));
+            return divide(a, b);
         break;
     }
 }
@@ -57,11 +57,7 @@ function precedence(operator){
 
 //give back integer if the result is nearly one
 function round(input){
-    const rounded = Math.round(input);
-    const relError = Math.abs((rounded - input) / input);
-    if (relError < 1e-7) {
-        return rounded;
-    } else return input;
+    return Math.round(input * 1e10) / 1e10;
 }
 
 //check if there is decimal point
@@ -86,13 +82,13 @@ function numberOfDigits(inputString) {
 }
 
 function addDigitToDisplay(digitString) {
-    if (display == '0' || isKeyOp(prevKey)) {
+    if (isKeyOp(prevKey) || display == '0') {
         display = digitString;
-    } else if (digitString != '.' || !isDecimal(display) && digitString == '.') {
-        if (numberOfDigits(display) < 10) {
-            display = display + digitString;
-        }
-    } 
+    } else if (numberOfDigits(display) < 10) {
+            if (digitString != '.' || !isDecimal(display)) {
+                display = display + digitString;
+            }
+    }
 }
 
 function deleteDigitFromDisplay() {
@@ -104,26 +100,41 @@ function deleteDigitFromDisplay() {
 }
 
 function toggleSign() {
-    if (isNaN(display) || display == '0') return
-    const disp = Number(display);
-    display = (-disp).toString();
-    updateDisplay();
+    if (display[0] == '-') {
+        display = display.slice(1);
+    } else {
+        display = '-' + display;
+    }
 }
 
 //restrict the number of digits lower than 10
 //be able to show ERROR message too
-function updateDisplay() {
+function updateDisplay(key) {
     const divDisplay = document.querySelector('.display');
-    if (!isNaN(display)) {
-        const value = Number(display);
-        if (numberOfDigits(display) > 10){
-            display = value.toPrecision(7);
-            if (numberOfDigits(display) > 10){
-                display = value.toExponential(6);
-            } 
+    if (!isNaN(displayValue) && isKeyOp(key)) {
+        const value = round(displayValue);
+        const absValue = Math.abs(value);
+        if (absValue > 9999999999 || absValue < 0.000000001 && value != 0){
+            display = value.toExponential(6);
+        } else { 
+            display = value.toString();
+            let len = 10;
+            if (value < 0) { len++; }
+            if (isDecimal(absValue.toString())) { len++; }
+            display = display.slice(0, len);
         }
+    }
+    if (isKeyOp(key)) {
+        display = displayValue;
+        initialize();
     } 
     divDisplay.textContent = display;
+}
+
+function updateValue() {
+   if (!isNaN(display)) {
+        displayValue = Number(display);
+   } 
 }
 
 function isKeyOp(key){
@@ -143,30 +154,31 @@ function calcWithPrecedence(nextOp){
         oldOp = op;
     } else {
         if (op != ''){  //do the current calculation when it goes first
-            b = Number(display);
-            display = operate(a, b, op).toString();
+            b = displayValue;
+            displayValue = operate(a, b, op);
         } 
         if (oldOp != '' && precedence(op) > precedence(nextOp)) { //go back to the saved calculation                                                     
-            oldB = Number(display);                               //when the next calculation comes later
-            display = operate(oldA, oldB, oldOp).toString();
+            oldB = displayValue;                                       //when the next calculation comes later
+            displayValue = operate(oldA, oldB, oldOp);
             oldOp = '';
         }
     }
-    a = Number(display);  //input the result for the next operation
+    a = displayValue;  //input the result for the next operation
 }
 
 //Handle when the white '.number' keys clicked
 function numberKeyPress(key){
     if (!isKeyNumber(key)) return
     if (key == 'C') {
-        deleteDigitFromDisplay();
+        key = deleteDigitFromDisplay();
     } else if (key == '+/-') {
         toggleSign();
     } else {
         addDigitToDisplay(key);
     }
-    updateDisplay();
     prevKey = key;  //save the previous key, because it shows when the number input starts 
+    updateValue();
+    updateDisplay(key);
 }
 
 function initialize(){
@@ -183,11 +195,12 @@ function initialize(){
 
 function tryToCalc(key){
     if (op != '' && !Number.isNaN(a) && !isKeyOp(prevKey)) {  //do your calculation when all the input available
-        b = Number(display);
+        b = displayValue;
         calcWithPrecedence(key);
-        updateDisplay();
+        updateDisplay(key);
     } else {
-        a = Number(display); //input the first operand from the display unless your full input is ready
+        if (displayValue == 'ERROR') return
+        a = displayValue; //input the first operand from the display unless your full input is ready
     }
 }
 
@@ -197,7 +210,8 @@ function operatorKeyPress(key){
         case 'AC':
             initialize();
             display = '0';
-            updateDisplay();
+            updateValue();
+            updateDisplay(key);
         break;
         case '=':
             tryToCalc(key);
@@ -294,8 +308,6 @@ function addEventHandler(event, func, elements){
 
 
 //main program
-let display = '0';
-updateDisplay();
 
 //current operands and operator
 let a = NaN;
@@ -309,12 +321,16 @@ let oldB = NaN;
 
 let prevKey = '';  //store the previous keypress to decide when to start number input
 
+let display = '0';
+let displayValue = 0;
+updateDisplay();
+
 const allKeys = document.querySelectorAll('.key');
 
 addEventHandler('click', onMouseClick, allKeys);  //this is the useful functionality
 
 addEventHandler('mousedown', onMouseDown, allKeys);   //do a little css effect
-addEventHandler('mouseup', onMouseUp, allKeys);  //when the keys are pushed and released
+addEventHandler('mouseup', onMouseUp, allKeys);       //when the keys are pushed and released
 
-window.addEventListener('keydown', onKeyDown);
+window.addEventListener('keydown', onKeyDown);     //keyboard support
 window.addEventListener('keyup', onKeyUp);
