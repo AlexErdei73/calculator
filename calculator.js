@@ -114,9 +114,9 @@ function updateDisplay(key) {
     const divDisplay = document.querySelector('.display');
     if (!isNaN(displayValue) && isKeyOp(key)) {
         const value = round(displayValue);
-        const absValue = Math.abs(value);
-        if (absValue > 9999999999 || absValue < 0.000000001 && value != 0){
-            display = value.toExponential(6);
+        const absValue = Math.abs(displayValue);
+        if (absValue > 9999999999 || absValue < 0.000000001 && absValue > 0){
+            display = displayValue.toExponential(6);
         } else { 
             display = value.toString();
             let len = 10;
@@ -190,18 +190,56 @@ function initialize(){
     op = '';
     b = NaN;
             
-    prevKey = '';
+    //prevKey = '';
 }
 
 function tryToCalc(key){
     if (op != '' && !Number.isNaN(a) && !isKeyOp(prevKey)) {  //do your calculation when all the input available
         b = displayValue;
+        saveOperation();
         calcWithPrecedence(key);
         updateDisplay(key);
+        op = '';
     } else {
         if (displayValue == 'ERROR') return
         a = displayValue; //input the first operand from the display unless your full input is ready
+        op = prevKey;
     }
+}
+
+//Save the operation for later use at the special calculation
+function saveOperation(){
+    preA = a;
+    preOp = op;
+    preB = b;
+}
+
+function loadOperation(){
+    a = preA;
+    op = preOp;
+    b = preB;
+}
+
+function deletePreOp(){
+    preA = NaN;
+    preOp = '';
+    preB = NaN;
+}
+
+//Calculate results for faulty input when '=' pushed
+function calcSpecial(key) {
+    loadOperation();
+    a = displayValue;
+    if (isKeyOp(prevKey)) {
+        if (prevKey != '=') {
+            op = prevKey;
+            b = displayValue;
+        }
+    }
+    saveOperation();
+    displayValue = operate(a, b, op);
+    updateDisplay(key);
+    prevKey = key;
 }
 
 function operatorKeyPress(key){
@@ -209,12 +247,17 @@ function operatorKeyPress(key){
     switch (key){
         case 'AC':
             initialize();
+            deletePreOp();
+            prevKey = '';
             display = '0';
             updateValue();
             updateDisplay(key);
         break;
         case '=':
             tryToCalc(key);
+            if (op != '') {
+                calcSpecial(key);
+            } 
             initialize();
             prevKey = key; //save the previous key, because it shows when the number input starts
         break;
@@ -320,6 +363,11 @@ let b = NaN;
 let oldA = NaN;
 let oldOp ='';
 let oldB = NaN;
+
+//space for saving operation for special calculation
+let preA = NaN;
+let preOp = '';
+let preB = NaN;
 
 let prevKey = '';  //store the previous keypress to decide when to start number input
 
